@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Globals:
+  Api:
+    EndpointConfiguration: REGIONAL
+    Cors: 
+     AllowOrigin: "'*'"
+     AllowHeaders: "'*'"
+     AllowMethods: "'*'"
+Resources:
+  LambdaFunctionOverHttps:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 1000
+      CodeUri: ./build/libs/my-location-aws-all.jar
+      Handler: org.jfl110.mylocation.MyLocationRootFunctionHandler
+      Runtime: java8
+      Environment:
+        Variables:
+         DYNAMO_DB_LOCAL_ENDPOINT: 'http://192.168.43.209:8000'
+         SECURITY_KEY: 'a-key'
+      Events:
+        HttpPost:
+          Type: Api
+          Properties:
+            Path: '/root'
+            Method: ANY
+            Auth:
+              Authorizer: NONE
+  OptionsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+# create a custom handler to return 200 and appropriate headers for your OPTIONS requests
+      FunctionName: options-handler
+      Handler: X
+      Runtime: java8
+      Events:
+        Options:
+          Type: Api
+          Properties:
+            Path: /{cors+}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+  
