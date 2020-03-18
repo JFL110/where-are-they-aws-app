@@ -1,7 +1,15 @@
 # Where are they : AWS App
-[![Build Status](https://travis-ci.org/JFL110/where-are-they-aws-app.svg?branch=master)](https://travis-ci.org/JFL110/where-are-they-aws-app)
+![Java CI](https://github.com/JFL110/where-are-they-aws-app/workflows/Java%20CI/badge.svg) ![Upload to AWS Lambda](https://github.com/JFL110/where-are-they-aws-app/workflows/Upload%20to%20AWS%20Lambda/badge.svg) [![codecov](https://codecov.io/gh/JFL110/where-are-they-aws-app/branch/master/graph/badge.svg)](https://codecov.io/gh/JFL110/where-are-they-aws-app)
 
 AWS application to track and display my location.
+
+## How it works
+- An Android application periodically uploads loactions to the app. 
+- A cron job triggers a digestion of all the location data and produces a JSON file hosted in an S3 bucket.
+- A JS React interface displays the location data on a map. The map is hosted [here](https://jfl110.github.io/where-are-they/), repo [here](https://github.com/JFL110/where-are-they/)
+
+## DevOps
+This repo is built automatically on push using Github actions. Changes to the version file trigger a redeployment to AWS Lambda. 
 
 ## Running locally
 
