@@ -16,7 +16,6 @@ public class MyLocationRootFunctionHandler extends GuiceFunctionHandler {
 			super(DestinationSwitcher.Switcher.switcher(
 					SwitchDestination.switchDestination(DestinationSwitcher.Switcher.DEFAULT, String.class, PokeHandler.class) // <-- Default
 					, SwitchDestination.switchDestination("log-locations", ExposedLogLocationsInput.class, LogLocationsHandler.class)
-					, SwitchDestination.switchDestination("show-all-json", String.class, ShowAllLocationsJsonHandler.class)
 					, SwitchDestination.switchDestination("write-all-json", String.class, WriteAllPointsSummaryToS3Handler.class)
 
 					));
