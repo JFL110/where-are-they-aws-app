@@ -28,5 +28,5 @@ jobs:
         aws_access_key_id: ${{ secrets.AWS_ID }}
         aws_secret_access_key: ${{ secrets.AWS_KEY }}
         aws_region: eu-west-2
-        function_name: Worksheet_Root_Handler
-        zip_file: ./build/distributions/WorksheetsModule.zip
+        function_name: MyLocation_Root_Handler
+        zip_file: ./build/distributions/where-are-they-aws-app.zip
