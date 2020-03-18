@@ -9,6 +9,7 @@ import org.jfl110.aws.SetCorsAllowAllResponseTransformation;
 import org.jfl110.aws.dynamodb.AmazonDynamoDBCreateTableContribution;
 import org.jfl110.aws.dynamodb.CreateTablesOnStartupModule;
 import org.jfl110.aws.dynamodb.SwitchingAmazonDynamoDBSupplierModule;
+import org.jfl110.mylocation.photos.PhotosModule;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
@@ -44,6 +45,8 @@ class MyLocationApp extends AwsLambdaGuiceApp {
 			Multibinder.newSetBinder(binder(), AmazonDynamoDBCreateTableContribution.class).addBinding().toInstance(contribution(LogLocationItem.class));
 			Multibinder.newSetBinder(binder(), AmazonDynamoDBCreateTableContribution.class).addBinding().toInstance(contribution(ManualLocationItem.class));
 			Multibinder.newSetBinder(binder(), AfterInjectorCreatedEvent.class).addBinding().to(InsertDefaultData.class);
+			
+			install(new PhotosModule());
 
 			// TODO REMOVE Allow all CORS
 			install(new SetCorsAllowAllResponseTransformation.Module());

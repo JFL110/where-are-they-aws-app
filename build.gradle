@@ -53,7 +53,9 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version:'4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.4.0'
     testCompile 'com.github.stefanbirkner:system-rules:1.19.0'
-    
+   
+   compile 'com.drewnoakes:metadata-extractor:2.13.0'
+   
      // DynamoDB Unit Testing
     testCompile group: 'com.amazonaws', name: 'DynamoDBLocal', version: '1.12.0'
 }
