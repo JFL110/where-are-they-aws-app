@@ -6,8 +6,8 @@ package org.jfl110.mylocation;
  * @author jim
  *
  */
-class SecurityKeyProvider {
-	String getSecurityKey() {
+public class SecurityKeyProvider {
+	public String getSecurityKey() {
 		return System.getenv("SECURITY_KEY");
 	}
 }
