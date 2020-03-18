@@ -12,6 +12,7 @@ AWS application to track and display my location.
 This repo is built automatically on push using Github actions. Changes to the version file trigger a redeployment to AWS Lambda. 
 
 ## Running locally
+Follow guidelines to install DynamoDB and SAM locally.
 
 ### DynamoDB
 Start DynamoDB locally with
