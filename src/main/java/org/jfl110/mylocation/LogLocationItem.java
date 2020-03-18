@@ -27,6 +27,22 @@ public class LogLocationItem {
 	private String time;
 	private String savedTime;
 	private String endTime; // Optional
+	
+	LogLocationItem(String id, double latitude, double longitude, double altitude, float accuracy, String deviceName, String time, String savedTime,
+			String endTime) {
+		this.id = id;
+		this.latitude = latitude;
+		this.longitude = longitude;
+		this.altitude = altitude;
+		this.accuracy = accuracy;
+		this.deviceName = deviceName;
+		this.time = time;
+		this.savedTime = savedTime;
+		this.endTime = endTime;
+	}
+	
+	public LogLocationItem() {}
+
 
 	@DynamoDBHashKey(attributeName = "id")
 	public String getId() {

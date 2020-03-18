@@ -10,6 +10,8 @@ buildscript {
    }
 }
 
+// Fat jar-ing
+
 apply plugin: 'com.github.johnrengelman.shadow'
 
 task buildZip(type: Zip) {
@@ -21,6 +23,27 @@ task buildZip(type: Zip) {
     }
 }
 
+// Dynamo DB local testing
+repositories { 
+  maven {
+            name = "dynamodb-local"
+            url = uri("https://repository.mulesoft.org/nexus/content/repositories/public")
+         }
+}
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.compile + configurations.testCompile) {
+        include '*.dll'
+        include '*.dylib'
+        include '*.so'
+    }
+    into 'build/libs'
+}
+
+test {
+    dependsOn copyNativeDeps
+}
+
 dependencies {
      // AWS-base
     compile group: 'org.jfl110', name: 'aws-base', version: '0.1.1'
@@ -30,6 +53,9 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version:'4.12'
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.4.0'
     testCompile 'com.github.stefanbirkner:system-rules:1.19.0'
+    
+     // DynamoDB Unit Testing
+    testCompile group: 'com.amazonaws', name: 'DynamoDBLocal', version: '1.12.0'
 }
 
 sourceCompatibility = 1.8
