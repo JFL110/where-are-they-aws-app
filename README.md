@@ -1,5 +1,7 @@
 # Where are they : AWS App
-AWS application to track and display my location
+[![Build Status](https://travis-ci.org/JFL110/where-are-they-aws-app.svg?branch=master)](https://travis-ci.org/JFL110/where-are-they-aws-app)
+
+AWS application to track and display my location.
 
 ## Running locally
 
