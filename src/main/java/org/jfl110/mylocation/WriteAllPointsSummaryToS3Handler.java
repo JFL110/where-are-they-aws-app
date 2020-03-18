@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.jfl110.app.Logger;
+import org.jfl110.aws.BadInputGatewayResponseException;
 import org.jfl110.aws.GatewayEventInformation;
 import org.jfl110.aws.GatewayRequestHandler;
 import org.jfl110.aws.GatewayResponse;
@@ -18,6 +18,7 @@ import org.jfl110.aws.GatewayResponseBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 
 public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<String> {
 
@@ -26,20 +27,24 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<S
 	private final S3FileWriter s3FileWriter;
 	private final LogLocationDAO logLocationDAO;
 	private final ManualLocationsDAO manualLocationsDAO;
-	private final Logger logger;
+	private final SecurityKeyProvider securityKeyProvider;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Inject
-	WriteAllPointsSummaryToS3Handler(S3FileWriter s3FileWriter, LogLocationDAO logLocationDAO, ManualLocationsDAO manualLocationsDAO, Logger logger) {
+	WriteAllPointsSummaryToS3Handler(S3FileWriter s3FileWriter, LogLocationDAO logLocationDAO, ManualLocationsDAO manualLocationsDAO, SecurityKeyProvider securityKeyProvider) {
 		this.s3FileWriter = s3FileWriter;
 		this.logLocationDAO = logLocationDAO;
 		this.manualLocationsDAO = manualLocationsDAO;
-		this.logger = logger;
+		this.securityKeyProvider =securityKeyProvider;
 	}
 
 
 	@Override
 	public GatewayResponse handleRequest(String secretKeyInput, GatewayEventInformation eventInfo, Context context) throws IOException {
+		if(!Strings.nullToEmpty(securityKeyProvider.getSecurityKey()).equals(Strings.nullToEmpty(secretKeyInput))) {
+			throw new BadInputGatewayResponseException("bad-security-key");
+		}
+		
 		// Map all locations
 		List<PointWithTime> locations = logLocationDAO.listAll().filter(l -> l.getAccuracy() < MIN_ACCURACY_METERS).map(
 				l -> new PointWithTime(new Point(l.getLatitude(), l.getLongitude()), ZonedDateTime.parse(l.getTime(), LogLocationItem.DATE_FORMAT)))
@@ -48,10 +53,10 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<S
 				m -> new PointWithTime(new Point(m.getLatitude(), m.getLongitude()), ZonedDateTime.parse(m.getTime(), LogLocationItem.DATE_FORMAT)))
 				.collect(Collectors.toList()));
 
-		Optional<PointWithTime> mostRecentPoint = locations.stream().sorted((p1, p2) -> p1.time.compareTo(p2.time)).findFirst();
+		Optional<PointWithTime> mostRecentPoint = locations.stream().sorted((p1, p2) -> p2.time.compareTo(p1.time)).findFirst();
 
 		LocationSummary summary = new LocationSummary(locations.stream().map(p -> p.point).collect(Collectors.toSet()),
-				mostRecentPoint.map(p -> p.point).orElse(null), mostRecentPoint.map(p -> p.time.toString()).orElse(null));
+				mostRecentPoint.map(p -> p.point).orElse(null), mostRecentPoint.map(p -> p.time.toInstant().toEpochMilli()).orElse(null));
 
 		s3FileWriter.writeJsonToPointsFile(objectMapper.writeValueAsString(summary));
 
@@ -68,9 +73,9 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<S
 
 		private final Set<Point> points;
 		private final Point mostRecentPoint;
-		private final String mostRecentPointTime;
+		private final  Long mostRecentPointTime;
 
-		LocationSummary(Set<Point> points, Point mostRecentPoint, String mostRecentPointTime) {
+		LocationSummary(Set<Point> points, Point mostRecentPoint, Long mostRecentPointTime) {
 			this.points = points;
 			this.mostRecentPoint = mostRecentPoint;
 			this.mostRecentPointTime = mostRecentPointTime;
@@ -84,7 +89,7 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<S
 
 
 		@JsonProperty("mostRecentPointTime")
-		public String getMostRecentPointTime() {
+		public Long getMostRecentPointTime() {
 			return mostRecentPointTime;
 		}
 

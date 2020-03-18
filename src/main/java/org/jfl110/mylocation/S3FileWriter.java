@@ -11,7 +11,9 @@ import org.jfl110.util.StringUtils;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 
 public class S3FileWriter {
 
@@ -40,8 +42,9 @@ public class S3FileWriter {
 		
 		ObjectMetadata metadata = new ObjectMetadata();
 	    metadata.setContentType("application/json");
-	    metadata.setContentDisposition("attachment; filename=\"" + jsonFileName);
-		s3client.putObject(bucketName, jsonFileName, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), metadata);
+	    PutObjectRequest request = new PutObjectRequest(bucketName, jsonFileName, new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)), metadata);
+	    request.setCannedAcl(CannedAccessControlList.PublicRead);
+		s3client.putObject(request);
 	}
 
 	static class S3CredentialsSupplier implements Supplier<AWSStaticCredentialsProvider> {
