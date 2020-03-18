@@ -1,5 +1,5 @@
 # Where are they : AWS App
-[![Build Status](https://travis-ci.org/JFL110/where-are-they-aws-app.svg?branch=master)](https://travis-ci.org/JFL110/where-are-they-aws-app)
+![Java CI](https://github.com/JFL110/where-are-they-aws-app/workflows/Java%20CI/badge.svg) ![Upload to AWS Lambda](https://github.com/JFL110/where-are-they-aws-app/workflows/Upload%20to%20AWS%20Lambda/badge.svg) [![codecov](https://codecov.io/gh/JFL110/where-are-they-aws-app/branch/master/graph/badge.svg)](https://codecov.io/gh/JFL110/where-are-they-aws-app)
 
 AWS application to track and display my location.
 
