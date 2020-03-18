@@ -2,7 +2,6 @@ package org.jfl110.mylocation;
 
 import static org.jfl110.aws.dynamodb.CreateTableContributionFromMapper.contribution;
 
-import org.jfl110.app.DefaultResourceLoaderModule;
 import org.jfl110.app.NowModule;
 import org.jfl110.aws.AfterInjectorCreatedEvent;
 import org.jfl110.aws.AwsLambdaGuiceApp;
@@ -36,9 +35,6 @@ class MyLocationApp extends AwsLambdaGuiceApp {
 	private static class MyLocationModule extends AbstractModule {
 		@Override
 		protected void configure() {
-			// Source resources
-			install(new DefaultResourceLoaderModule());
-			
 			// Now
 			install(new NowModule());
 			

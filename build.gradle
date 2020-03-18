@@ -1,3 +1,5 @@
+apply from : 'common-build.gradle'
+
 buildscript {  
   repositories {
     jcenter() 
@@ -8,41 +10,20 @@ buildscript {
    }
 }
 
-apply plugin: 'java' 
-apply plugin: 'maven'
 apply plugin: 'com.github.johnrengelman.shadow'
 
-repositories { 
-  mavenLocal()
-  jcenter()
-  mavenCentral()
-  maven { url 'file:local-repo/' } 
-}
-
-
-task createPom{
-	doLast {
-	    pom {
-		project {
-		    groupId 'org.jfl110.mylocation'
-		    artifactId 'aws-app'
-		    version '0.0.1-SNAPSHOT'
-		    properties {
-	            maven {
-	                compiler {
-	                    source '1.8'
-	                    target '1.8'
-	                }
-	            }
-       	    }
-		}
-	    }.writeTo("pom.xml")
-	}
+task buildZip(type: Zip) {
+    from compileJava
+    from processResources
+    from ('version.properties')
+    into('lib') {
+        from configurations.runtimeClasspath
+    }
 }
 
 dependencies {
      // AWS-base
-    compile group: 'org.jfl110', name: 'aws-base', version: '0.0.1-SNAPSHOT'
+    compile group: 'org.jfl110', name: 'aws-base', version: '0.1.1'
 
     // Test utilities
     testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'   

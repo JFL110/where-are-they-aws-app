@@ -11,13 +11,14 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 
 /**
  * DAO for {@link LogLocationItem}
+ * 
  * @author jim
  *
  */
 class LogLocationDAO {
-	
+
 	private final DynamoDBMapperFront dynamoDBMapperFront;
-	
+
 	@Inject
 	LogLocationDAO(DynamoDBMapperFront dynamoDBMapperFront) {
 		this.dynamoDBMapperFront = dynamoDBMapperFront;
@@ -27,9 +28,9 @@ class LogLocationDAO {
 	void save(List<LogLocationItem> items) {
 		dynamoDBMapperFront.mapper().batchSave(items);
 	}
-	
-	
-	Stream<LogLocationItem> listAll(){
+
+
+	Stream<LogLocationItem> listAll() {
 		return dynamoDBMapperFront.mapper().scan(LogLocationItem.class, new DynamoDBScanExpression()).stream();
 	}
 }

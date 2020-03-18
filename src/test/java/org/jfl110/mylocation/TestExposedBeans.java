@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
-import org.jfl110.app.DefaultResourceLoaderModule;
 import org.jfl110.app.ResourceLoader;
 import org.junit.Test;
 
@@ -22,7 +21,7 @@ import com.google.inject.Guice;
  */
 public class TestExposedBeans {
 
-	private final ResourceLoader resLoader = Guice.createInjector(new DefaultResourceLoaderModule()).getInstance(ResourceLoader.class);
+	private final ResourceLoader resLoader = Guice.createInjector().getInstance(ResourceLoader.class);
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Test
