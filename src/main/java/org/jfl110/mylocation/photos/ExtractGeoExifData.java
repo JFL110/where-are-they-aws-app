@@ -18,14 +18,9 @@ public class ExtractGeoExifData {
 
 	public Optional<ExtractedPhotoDetails> extract(InputStream is) {
 		Metadata metadata = ExceptionUtils.doRethrowing(() -> ImageMetadataReader.readMetadata(is));
-		Optional<Double> latRef = getTag(metadata, "GPS Latitude Ref").map(this::refFactor);
-		Optional<Double> longRef = getTag(metadata, "GPS Longitude Ref").map(this::refFactor);
-		if (!latRef.isPresent() || !longRef.isPresent()) {
-			return Optional.empty();
-		}
 
-		Optional<Double> lat = getTag(metadata, "GPS Latitude").flatMap(this::fromMinutes).map(d -> d * latRef.get());
-		Optional<Double> lng = getTag(metadata, "GPS Longitude").flatMap(this::fromMinutes).map(d -> d * longRef.get());
+		Optional<Double> lat = getTag(metadata, "GPS Latitude").flatMap(this::fromMinutes);
+		Optional<Double> lng = getTag(metadata, "GPS Longitude").flatMap(this::fromMinutes);
 		Optional<LocalDateTime> time = getTag(metadata, "Date/Time").map(s -> LocalDateTime.parse(s, EXIF_DATE_TIME_FORMAT));
 
 		if (!lat.isPresent() || !lng.isPresent() || !time.isPresent()) {
@@ -83,7 +78,8 @@ public class ExtractGeoExifData {
 		if (parts.length != 3) {
 			return Optional.empty();
 		}
-		return Optional.of(Double.valueOf(parts[0]) + Double.valueOf(parts[1]) / 60 + Double.valueOf(parts[2]) / 3600);
+		double firstPart = Double.valueOf(parts[0]);
+		return Optional.of(firstPart + (firstPart < 0 ? -1 : 1) * Double.valueOf(parts[1]) / 60 +  (firstPart < 0 ? -1 : 1) * Double.valueOf(parts[2]) / 3600);
 	}
 
 
