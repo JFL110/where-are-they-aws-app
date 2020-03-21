@@ -13,7 +13,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 
 public class ExtractGeoExifData {
-	
+
 	private static final DateTimeFormatter EXIF_DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
 
 	public Optional<ExtractedPhotoDetails> extract(InputStream is) {
@@ -31,8 +31,10 @@ public class ExtractGeoExifData {
 		if (!lat.isPresent() || !lng.isPresent() || !time.isPresent()) {
 			return Optional.empty();
 		}
-		System.out.println(lat.get() + ", " + lng.get() + "-" + time.get());
 
+		System.out.println("Converted at time[" + time.get() + "] - [" + getTag(metadata, "GPS Latitude") + "," + getTag(metadata, "GPS Longitude")
+				+ "] to [" + lat.get() + "," + lng.get() + "]");
+		
 		return Optional.of(new ExtractedPhotoDetails(lat.get(), lng.get(), time.get()));
 	}
 
