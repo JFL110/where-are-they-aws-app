@@ -44,7 +44,7 @@ class ProcessS3PhotoBucket {
 					// objectSummary.getKey());
 					return ExceptionUtils.doRethrowing(() -> {
 						try (InputStream is = s3client.getObject(s3Config.getBucketName(), objectSummary.getKey()).getObjectContent()) {
-							Optional<ExtractedPhotoDetails> details = new ExtractGeoExifData().extract(is);
+							Optional<ExtractedPhotoDetails> details = new ExtractGeoExifData().extract(is, logger);
 							if (!details.isPresent()) {
 								String msg = "Warning : no geo data found for [" + objectSummary.getKey() + "]";
 								logLines.add(msg);

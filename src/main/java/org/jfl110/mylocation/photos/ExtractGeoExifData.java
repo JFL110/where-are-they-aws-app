@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
+import org.jfl110.app.Logger;
 import org.jfl110.util.ExceptionUtils;
 
 import com.drew.imaging.ImageMetadataReader;
@@ -16,18 +17,23 @@ public class ExtractGeoExifData {
 
 	private static final DateTimeFormatter EXIF_DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
 
-	public Optional<ExtractedPhotoDetails> extract(InputStream is) {
+	public Optional<ExtractedPhotoDetails> extract(InputStream is, Logger logger) {
 		Metadata metadata = ExceptionUtils.doRethrowing(() -> ImageMetadataReader.readMetadata(is));
 
 		Optional<Double> lat = getTag(metadata, "GPS Latitude").flatMap(this::fromMinutes);
 		Optional<Double> lng = getTag(metadata, "GPS Longitude").flatMap(this::fromMinutes);
 		Optional<LocalDateTime> time = getTag(metadata, "Date/Time").map(s -> LocalDateTime.parse(s, EXIF_DATE_TIME_FORMAT));
 
+		
+		if (!time.isPresent() && (lat.isPresent() || lng.isPresent())) {
+			logger.log("Time not found but lat or long found");
+		}
+		
 		if (!lat.isPresent() || !lng.isPresent() || !time.isPresent()) {
 			return Optional.empty();
 		}
 
-		System.out.println("Converted at time[" + time.get() + "] - [" + getTag(metadata, "GPS Latitude") + "," + getTag(metadata, "GPS Longitude")
+		logger.log("Converted at time[" + time.get() + "] - [" + getTag(metadata, "GPS Latitude") + "," + getTag(metadata, "GPS Longitude")
 				+ "] to [" + lat.get() + "," + lng.get() + "]");
 		
 		return Optional.of(new ExtractedPhotoDetails(lat.get(), lng.get(), time.get()));
