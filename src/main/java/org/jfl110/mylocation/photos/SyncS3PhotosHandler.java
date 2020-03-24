@@ -31,8 +31,8 @@ public class SyncS3PhotosHandler implements GatewayRequestHandler<String> {
 		if (!Strings.nullToEmpty(securityKeyProvider.getSecurityKey()).equals(Strings.nullToEmpty(securityKey))) {
 			throw new BadInputGatewayResponseException("bad-security-key");
 		}
-		processS3PhotoBucket.process();
-		return GatewayResponseBuilder.gatewayResponse().ok().stringBody("ok").build();
+		ExposedSyncS3PhotosOutput output = processS3PhotoBucket.process();
+		return GatewayResponseBuilder.gatewayResponse().ok().jsonBodyFromObject(output).build();
 	}
 
 
