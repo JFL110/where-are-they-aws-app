@@ -15,68 +15,84 @@ import org.jfl110.aws.GatewayRequestHandler;
 import org.jfl110.aws.GatewayResponse;
 import org.jfl110.aws.GatewayResponseBuilder;
 import org.jfl110.mylocation.photos.PhotoDao;
+import org.jfl110.util.LambdaUtils;
+import org.jfl110.util.StringUtils;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 
-public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<String> {
+/**
+ * Handler to digest all location data and photos and write to S3
+ * 
+ * @author jim
+ *
+ */
+public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<ExposedSecurityKeyInput> {
 
 	private static final float MIN_ACCURACY_METERS = 500;
 
 	private final S3FileWriter s3FileWriter;
-	private final LogLocationDAO logLocationDAO;
-	private final ManualLocationsDAO manualLocationsDAO;
+	private final LocationsDao logLocationDAO;
 	private final SecurityKeyProvider securityKeyProvider;
 	private final PhotoDao photoDao;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
 	@Inject
-	WriteAllPointsSummaryToS3Handler(S3FileWriter s3FileWriter, LogLocationDAO logLocationDAO, ManualLocationsDAO manualLocationsDAO,
-			SecurityKeyProvider securityKeyProvider, PhotoDao photoDao) {
+	WriteAllPointsSummaryToS3Handler(S3FileWriter s3FileWriter,
+			LocationsDao logLocationDAO,
+			SecurityKeyProvider securityKeyProvider,
+			PhotoDao photoDao) {
 		this.s3FileWriter = s3FileWriter;
 		this.logLocationDAO = logLocationDAO;
-		this.manualLocationsDAO = manualLocationsDAO;
 		this.securityKeyProvider = securityKeyProvider;
 		this.photoDao = photoDao;
 	}
 
 
 	@Override
-	public GatewayResponse handleRequest(String secretKeyInput, GatewayEventInformation eventInfo, Context context) throws IOException {
-		if (!Strings.nullToEmpty(securityKeyProvider.getSecurityKey()).equals(Strings.nullToEmpty(secretKeyInput))) {
-			throw new BadInputGatewayResponseException("bad-security-key");
+	public GatewayResponse handleRequest(ExposedSecurityKeyInput secretKeyInput, GatewayEventInformation eventInfo, Context context)
+			throws IOException {
+		if (secretKeyInput == null)
+			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NO_INPUT_MESSAGE);
+		if (StringUtils.isBlank(secretKeyInput.getTenantId()) ||
+				StringUtils.isBlank(secretKeyInput.getSecurityKey()) ||
+				!securityKeyProvider.getSecurityKey(secretKeyInput.getTenantId()).orElse("").equals(secretKeyInput.getSecurityKey())) {
+			throw new BadInputGatewayResponseException(MyLocationAppConfig.BAD_SECURITY_KEY);
 		}
 
 		// Map all locations
-		List<PointWithTime> locations = logLocationDAO.listAll().filter(l -> l.getAccuracy() < MIN_ACCURACY_METERS).map(
-				l -> new PointWithTime(new Point(l.getLatitude(), l.getLongitude()), ZonedDateTime.parse(l.getTime(), LogLocationItem.DATE_FORMAT)))
+		List<PointWithTime> locations = logLocationDAO.listAllAuto(secretKeyInput.getTenantId())
+				.filter(l -> l.getAccuracy() < MIN_ACCURACY_METERS)
+				.map(l -> new PointWithTime(new Point(l.getLatitude(), l.getLongitude()), l.getTime()))
 				.collect(Collectors.toList());
-		locations.addAll(manualLocationsDAO.listAll().map(
-				m -> new PointWithTime(new Point(m.getLatitude(), m.getLongitude()), ZonedDateTime.parse(m.getTime(), LogLocationItem.DATE_FORMAT)))
-				.collect(Collectors.toList()));
+		locations.addAll(
+				LambdaUtils.mapList(logLocationDAO.listAllManual(secretKeyInput.getTenantId()),
+						m -> new PointWithTime(new Point(m.getLatitude(), m.getLongitude()), m.getTime())));
 
 		// Photos
-		List<Photo> photos = photoDao.listAll()
-				.transform(p -> new Photo(p.getUrl(), new Point(p.getLatitude(), p.getLongitude()), p.getTime().toInstant().toEpochMilli())).toList();
+		List<Photo> photos = LambdaUtils.mapList(photoDao.listAll(secretKeyInput.getTenantId()),
+				p -> new Photo(p.getUrl(), new Point(p.getLatitude(), p.getLongitude()), p.getTime().toInstant().toEpochMilli()));
 
+		// Calculate most recent point
 		Optional<PointWithTime> mostRecentPoint = locations.stream().sorted((p1, p2) -> p2.time.compareTo(p1.time)).findFirst();
 
-		LocationSummary summary = new LocationSummary(locations.stream().map(p -> p.point).collect(Collectors.toSet()), photos,
-				mostRecentPoint.map(p -> p.point).orElse(null), mostRecentPoint.map(p -> p.time.toInstant().toEpochMilli()).orElse(null));
+		// Format output - remove duplicate points
+		LocationSummary summary = new LocationSummary(
+				LambdaUtils.mapSet(locations, p -> p.point),
+				photos,
+				mostRecentPoint.map(p -> p.point).orElse(null),
+				mostRecentPoint.map(p -> p.time.toInstant().toEpochMilli()).orElse(null));
 
+		// Write to S3
 		s3FileWriter.writeJsonToPointsFile(objectMapper.writeValueAsString(summary));
 
 		return GatewayResponseBuilder.gatewayResponse().ok().stringBody(summary.points.size() + " points written").build();
 	}
 
-
-	@Override
-	public Class<String> inputClazz() {
-		return String.class;
-	}
-
+	/**
+	 * JSON format for the output file
+	 */
 	public static class LocationSummary {
 
 		private final Set<Point> points;

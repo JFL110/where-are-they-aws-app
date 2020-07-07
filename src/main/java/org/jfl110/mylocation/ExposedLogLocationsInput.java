@@ -21,24 +21,37 @@ public class ExposedLogLocationsInput {
 
 	private final String securityKey;
 	private final String deviceName;
+	private final String tenantId;
 	private final ImmutableList<Location> locations;
 
 	@JsonCreator
-	public ExposedLogLocationsInput(@JsonProperty("locations") List<Location> locations, @JsonProperty("key") String securityKey, @JsonProperty("device") String deviceName) {
+	public ExposedLogLocationsInput(
+			@JsonProperty("locations") List<Location> locations,
+			@JsonProperty("tenantId") String tenantId,
+			@JsonProperty("key") String securityKey,
+			@JsonProperty("device") String deviceName) {
 		this.locations = ImmutableList.copyOf(locations);
+		this.tenantId = tenantId;
 		this.securityKey = securityKey;
 		this.deviceName = deviceName;
 	}
-	
+
+
+	String getTenantId() {
+		return tenantId;
+	}
+
+
 	String getSecurityKey() {
 		return securityKey;
 	}
-	
+
 
 	ImmutableList<Location> getLocations() {
 		return locations;
 	}
-	
+
+
 	String getDeviceName() {
 		return deviceName;
 	}
@@ -59,8 +72,11 @@ public class ExposedLogLocationsInput {
 		private final String recordedTimeAsString;
 
 		@JsonCreator
-		public Location(@JsonProperty("id") String id, @JsonProperty("la") double latitude, @JsonProperty("lo") double longitude,
-				@JsonProperty("al") double altitude, @JsonProperty("ac") float accuracy, 
+		public Location(@JsonProperty("id") String id,
+				@JsonProperty("la") double latitude,
+				@JsonProperty("lo") double longitude,
+				@JsonProperty("al") double altitude,
+				@JsonProperty("ac") float accuracy,
 				@JsonProperty("t") String recordedTimeAsString) {
 			this.id = id;
 			this.latitude = latitude;
@@ -89,11 +105,13 @@ public class ExposedLogLocationsInput {
 		String getRecordedTimeAsString() {
 			return recordedTimeAsString;
 		}
-		
+
+
 		float getAccuracy() {
 			return accuracy;
 		}
-		
+
+
 		double getAltitude() {
 			return altitude;
 		}

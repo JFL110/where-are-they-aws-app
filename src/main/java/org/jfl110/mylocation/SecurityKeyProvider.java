@@ -1,5 +1,10 @@
 package org.jfl110.mylocation;
 
+import java.util.Objects;
+import java.util.Optional;
+
+import org.jfl110.app.ConfigVariableExtractor;
+
 /**
  * Injectable provider of the system security key property.
  * 
@@ -7,7 +12,9 @@ package org.jfl110.mylocation;
  *
  */
 public class SecurityKeyProvider {
-	public String getSecurityKey() {
-		return System.getenv("SECURITY_KEY");
+
+	public Optional<String> getSecurityKey(String tennantId) {
+		Objects.requireNonNull(tennantId);
+		return ConfigVariableExtractor.readString("SECURITY_KEY_" + tennantId.toUpperCase());
 	}
 }

@@ -1,7 +1,10 @@
 package org.jfl110.mylocation;
 
+import static org.jfl110.mylocation.MyLocationAppConfig.LIVE_TENNANT_ID;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -17,29 +20,31 @@ import org.jfl110.aws.AfterInjectorCreatedEvent;
  */
 class InsertDefaultData implements AfterInjectorCreatedEvent {
 
-	private final ManualLocationsDAO manualLocationsDAO;
+	private final LocationsDao dao;
 	private final Logger logger;
 
 	@Inject
-	InsertDefaultData(ManualLocationsDAO manualLocationsDAO, Logger logger) {
-		this.manualLocationsDAO = manualLocationsDAO;
+	InsertDefaultData(LocationsDao dao, Logger logger) {
+		this.dao = dao;
 		this.logger = logger;
 	}
 
 
 	@Override
 	public void run() {
-		if (!manualLocationsDAO.defaultItemExists()) {
+		if (!dao.defaultItemExists(LIVE_TENNANT_ID)) {
 			logger.log("Inserting default ManualLocationItem");
-			ManualLocationItem item = new ManualLocationItem();
-			item.setId(ManualLocationsDAO.DEFAULT_ID);
-			item.setLatitude(0);
-			item.setLongitude(0);
-			item.setNight(true);
-			item.setTime(ManualLocationItem.DATE_FORMAT.format(ZonedDateTime.of(2020, 1, 15, 0, 0, 0, 0, ZoneId.of("UTC"))));
-			item.setAccuracy(25f);
-			item.setTitle("title");
-			manualLocationsDAO.saveDefaultItem(item);
+			dao.saveDefaultManualItem(LIVE_TENNANT_ID,
+					new ManualLogLocation(
+							LocationsDao.DEFAULT_ITEM_SORT_KEY,
+							Optional.of("title"),
+							Optional.of("notes"),
+							0,
+							0,
+							Optional.of(25f),
+							ZonedDateTime.of(2020, 1, 15, 0, 0, 0, 0, ZoneId.of("UTC")),
+							true,
+							Optional.empty()));
 		}
 	}
 }

@@ -1,11 +1,9 @@
 package org.jfl110.mylocation;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
-import org.jfl110.app.Logger;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -17,10 +15,11 @@ import org.mockito.Mockito;
  *
  */
 public class TestInsertDefaultData {
-	
-	private final ManualLocationsDAO manualLocationsDAO = mock(ManualLocationsDAO.class);
-	private final Logger logger = mock(Logger.class);
-	private final InsertDefaultData task = new InsertDefaultData(manualLocationsDAO, logger);
+
+	private static final String TENANT_ID = "live";
+
+	private final LocationsDao locationsDao = mock(LocationsDao.class);
+	private final InsertDefaultData task = new InsertDefaultData(locationsDao, System.out::println);
 
 	/**
 	 * Tests nothing is inserted if the item exists already
@@ -28,13 +27,13 @@ public class TestInsertDefaultData {
 	@Test
 	public void testNoInsert() {
 		// Given
-		when(manualLocationsDAO.defaultItemExists()).thenReturn(true);
+		when(locationsDao.defaultItemExists(TENANT_ID)).thenReturn(true);
 
 		// When
 		task.run();
 
 		// Then
-		verify(manualLocationsDAO, Mockito.never()).saveDefaultItem(Mockito.any(ManualLocationItem.class));
+		verify(locationsDao, Mockito.never()).saveDefaultManualItem(eq(TENANT_ID), Mockito.any(ManualLogLocation.class));
 	}
 
 
@@ -44,21 +43,20 @@ public class TestInsertDefaultData {
 	@Test
 	public void testInsert() {
 		// Given
-		when(manualLocationsDAO.defaultItemExists()).thenReturn(false);
+		when(locationsDao.defaultItemExists(TENANT_ID)).thenReturn(false);
 
 		// When
 		task.run();
 
 		// Then
-		ArgumentCaptor<ManualLocationItem> captor = ArgumentCaptor.forClass(ManualLocationItem.class);
-		verify(manualLocationsDAO, Mockito.times(1)).saveDefaultItem(captor.capture());
+		ArgumentCaptor<ManualLogLocation> captor = ArgumentCaptor.forClass(ManualLogLocation.class);
+		verify(locationsDao, Mockito.times(1)).saveDefaultManualItem(eq(TENANT_ID), captor.capture());
 
-		assertEquals("template", captor.getValue().getId());
+		assertEquals("def", captor.getValue().getId());
 		assertEquals(0, captor.getValue().getLatitude(), 0d);
 		assertEquals(0, captor.getValue().getLongitude(), 0d);
-		assertEquals(25, captor.getValue().getAccuracy(), 0d);
-		assertEquals("title", captor.getValue().getTitle());
-		assertEquals("2020-01-15T00:00:00Z[UTC]", captor.getValue().getTime());
-
+		assertEquals(25, captor.getValue().getAccuracy().orElse(0f), 0d);
+		assertEquals("title", captor.getValue().getTitle().orElse(null));
+		assertEquals("2020-01-15T00:00Z[UTC]", captor.getValue().getTime().toString());
 	}
 }

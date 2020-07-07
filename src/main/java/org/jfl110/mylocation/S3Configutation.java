@@ -4,6 +4,7 @@ import org.jfl110.util.StringUtils;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
 
 public class S3Configutation {
 
@@ -11,6 +12,7 @@ public class S3Configutation {
 	private static final String S3_SECRET_KEY = "S3_SECRET_KEY";
 	private static final String S3_JSON_BUCKET_NAME = "S3_JSON_BUCKET_NAME";
 	private static final String S3_JSON_FILE_NAME = "S3_JSON_FILE_NAME";
+	private static final Regions REGION = Regions.EU_WEST_2;
 
 	public AWSStaticCredentialsProvider getCredentials() {
 		String accessKey = System.getenv(S3_ACCESS_KEY);
@@ -23,6 +25,11 @@ public class S3Configutation {
 		}
 
 		return new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
+	}
+
+
+	public Regions getRegion() {
+		return REGION;
 	}
 
 

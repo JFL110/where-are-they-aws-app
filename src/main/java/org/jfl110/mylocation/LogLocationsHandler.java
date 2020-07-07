@@ -1,7 +1,10 @@
 package org.jfl110.mylocation;
 
+import static org.jfl110.mylocation.MyLocationAppConfig.BAD_SECURITY_KEY;
+
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -11,11 +14,10 @@ import org.jfl110.aws.GatewayEventInformation;
 import org.jfl110.aws.GatewayRequestHandler;
 import org.jfl110.aws.GatewayResponse;
 import org.jfl110.aws.GatewayResponseBuilder;
+import org.jfl110.util.LambdaUtils;
 import org.jfl110.util.StringUtils;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.google.common.base.Strings;
-import com.google.common.collect.FluentIterable;
 
 /**
  * Handler that receives and saves location logs.
@@ -25,15 +27,13 @@ import com.google.common.collect.FluentIterable;
  */
 class LogLocationsHandler implements GatewayRequestHandler<ExposedLogLocationsInput> {
 
-	static final String BAD_SECURITY_KEY = "bad-security-key";
-	
-	private final LogLocationDAO logLocationDAO;
+	private final LocationsDao locationsDao;
 	private final SecurityKeyProvider securityKeyProvider;
 	private final ZonedNowSupplier nowSupplier;
 
 	@Inject
-	LogLocationsHandler(LogLocationDAO logLocationDAO, SecurityKeyProvider securityKeyProvider, ZonedNowSupplier nowSupplier) {
-		this.logLocationDAO = logLocationDAO;
+	LogLocationsHandler(LocationsDao locationsDao, SecurityKeyProvider securityKeyProvider, ZonedNowSupplier nowSupplier) {
+		this.locationsDao = locationsDao;
 		this.nowSupplier = nowSupplier;
 		this.securityKeyProvider = securityKeyProvider;
 	}
@@ -41,47 +41,51 @@ class LogLocationsHandler implements GatewayRequestHandler<ExposedLogLocationsIn
 
 	@Override
 	public GatewayResponse handleRequest(ExposedLogLocationsInput input, GatewayEventInformation eventInfo, Context context) throws IOException {
+		// Validate input
 		if (input == null)
 			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NO_INPUT_MESSAGE);
-		
-		if(!Strings.nullToEmpty(securityKeyProvider.getSecurityKey()).equals(Strings.nullToEmpty(input.getSecurityKey())))
+
+		if (StringUtils.isBlank(input.getTenantId()))
+			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NULL_IN_INPUT, "tennant-id");
+
+		if (StringUtils.isBlank(input.getSecurityKey()))
+			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NULL_IN_INPUT, "security-key");
+
+		if (!securityKeyProvider.getSecurityKey(input.getTenantId()).orElse("").equals(input.getSecurityKey()))
 			throw new BadInputGatewayResponseException(BAD_SECURITY_KEY);
-		
-		
-		if(StringUtils.isBlank(input.getDeviceName()))
+
+		if (StringUtils.isBlank(input.getDeviceName()))
 			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NULL_IN_INPUT, "device-name");
 
+		// Save locations
 		context.getLogger().log("Saving locations [ " + input + "]");
-		logLocationDAO.save(FluentIterable.from(input.getLocations()).transform(l -> mapToItemAndCheck(input.getDeviceName(), l)).toList());
+		locationsDao.save(input.getTenantId(),
+				LambdaUtils.mapList(input.getLocations(), l -> mapToItemAndCheck(input.getDeviceName(), l)));
+
+		// Return location ids in response
 		return GatewayResponseBuilder.gatewayResponse().ok().jsonBodyFromObject(
-				new ExposedLogLocationsOutput(FluentIterable.from(input.getLocations()).transform(ExposedLogLocationsInput.Location::getId).toList()))
+				new ExposedLogLocationsOutput(LambdaUtils.mapList(input.getLocations(), ExposedLogLocationsInput.Location::getId)))
 				.build();
 	}
 
 
-	private LogLocationItem mapToItemAndCheck(String deviceName, ExposedLogLocationsInput.Location location) {
-		if(StringUtils.isBlank(location.getId())) {
+	private AutoLogLocation mapToItemAndCheck(String deviceName, ExposedLogLocationsInput.Location location) {
+		if (StringUtils.isBlank(location.getId())) {
 			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NULL_IN_INPUT, "id");
 		}
-		if(StringUtils.isBlank(location.getRecordedTimeAsString())) {
+		if (StringUtils.isBlank(location.getRecordedTimeAsString())) {
 			throw new BadInputGatewayResponseException(BadInputGatewayResponseException.NULL_IN_INPUT, "time");
 		}
-		
-		LogLocationItem item = new LogLocationItem();
-		item.setId(location.getId());
-		item.setLatitude(location.getLatitude());
-		item.setLongitude(location.getLongitude());
-		item.setAltitude(location.getAltitude());
-		item.setAccuracy(location.getAccuracy());
-		item.setDeviceName(deviceName);
-		item.setTime(LogLocationItem.DATE_FORMAT.format(ZonedDateTime.parse(location.getRecordedTimeAsString(), ExposedLogLocationsInput.DATE_FORMAT)));
-		item.setSavedTime(LogLocationItem.DATE_FORMAT.format(nowSupplier.get()));
-		return item;
-	}
 
-
-	@Override
-	public Class<ExposedLogLocationsInput> inputClazz() {
-		return ExposedLogLocationsInput.class;
+		return new AutoLogLocation(
+				location.getId(),
+				location.getLatitude(),
+				location.getLongitude(),
+				location.getAltitude(),
+				location.getAccuracy(),
+				deviceName,
+				ZonedDateTime.parse(location.getRecordedTimeAsString(), ExposedLogLocationsInput.DATE_FORMAT),
+				nowSupplier.get(),
+				Optional.empty());
 	}
 }

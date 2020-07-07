@@ -1,156 +1,111 @@
 package org.jfl110.mylocation.photos;
 
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import org.jfl110.aws.dynamodb.DynamoDBMapperFront;
-import org.jfl110.aws.dynamodb.ZonedDateTimeDynamoDBMapper;
+import org.jfl110.genericitem.GenericItem;
+import org.jfl110.genericitem.GenericItemDao;
+import org.jfl110.genericitem.GenericItemKey;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTypeConverted;
-import com.google.common.collect.FluentIterable;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PhotoDao {
 
-	private final DynamoDBMapperFront db;
+	private static final String FIXED_PARTITION_KEY = "photo";
+	private static final GenericItemKey.Template KEY = GenericItemKey.template("Photo").jsonVersion(1).tennantIdRequired();
+	private final GenericItemDao dao;
 
 	@Inject
-	PhotoDao(DynamoDBMapperFront db) {
-		this.db = db;
-	}
-	
-	void delete(PhotoItem item) {
-		db.delete(item);
+	PhotoDao(GenericItemDao dao) {
+		this.dao = dao;
 	}
 
 
-	void save(PhotoItem item) {
-		db.save(item);
+	void delete(String tenantId, Photo item) {
+		dao.delete(KEY.key()
+				.withPartitionKey(FIXED_PARTITION_KEY)
+				.withTennantId(tenantId)
+				.withSortKey(item.getId())
+				.build());
 	}
 
 
-	public FluentIterable<PhotoItem> listAll() {
-		return db.listAll(PhotoItem.class);
+	void save(String tenantId, List<Photo> items) {
+		dao.batchWriteManager().doInWriteBatch(() -> {
+			items.forEach(
+					item -> dao.put(GenericItem.genericItem(KEY.key()
+							.withPartitionKey(FIXED_PARTITION_KEY)
+							.withTennantId(tenantId)
+							.withSortKey(item.getId()))
+							.withContentJson(map(item))));
+		});
 	}
 
-	@DynamoDBTable(tableName = "MyLocation_Photo")
+
+	public Stream<Photo> listAll(String tenantId) {
+		return dao.queryByPartition(KEY.queryKey()
+				.withPartitionKey(FIXED_PARTITION_KEY)
+				.withTennantId(tenantId))
+				.map(this::map);
+	}
+
+
+	private PhotoItem map(Photo p) {
+		return new PhotoItem(p.getLatitude(),
+				p.getLongitude(),
+				p.getUrl(),
+				p.getThumbnailUrl(),
+				p.getTime(),
+				p.getTitle(),
+				p.getDescription());
+	}
+
+
+	private Photo map(GenericItem g) {
+		PhotoItem i = g.contentAs(PhotoItem.class);
+		return new Photo(
+				g.sortKey(),
+				i.latitude,
+				i.longitude,
+				i.url,
+				i.thumbnailUrl,
+				i.time,
+				i.title,
+				i.description);
+	}
+
+	/**
+	 * Json format for storing photos
+	 */
 	public static class PhotoItem {
 
-		private String id;
-		private double latitude;
-		private double longitude;
-		private String url;
-		private String thumbnailUrl;
-		private ZonedDateTime time;
-		private String title;
-		private String description;
+		@JsonProperty("lat") private final double latitude;
+		@JsonProperty("lon") private final double longitude;
+		@JsonProperty("url") private final String url;
+		@JsonProperty("thumbUrl") private final Optional<String> thumbnailUrl;
+		@JsonProperty("time") private final ZonedDateTime time;
+		@JsonProperty("tile") private final Optional<String> title;
+		@JsonProperty("desc") private final Optional<String> description;
 
-		PhotoItem(String id, double latitude, double longitude, String url, String thumbnailUrl, ZonedDateTime time, String title,
-				String description) {
-			this.id = id;
+		@JsonCreator
+		public PhotoItem(@JsonProperty("lat") double latitude,
+				@JsonProperty("lon") double longitude,
+				@JsonProperty("url") String url,
+				@JsonProperty("thumbUrl") Optional<String> thumbnailUrl,
+				@JsonProperty("time") ZonedDateTime time,
+				@JsonProperty("tile") Optional<String> title,
+				@JsonProperty("desc") Optional<String> description) {
 			this.latitude = latitude;
 			this.longitude = longitude;
 			this.url = url;
 			this.thumbnailUrl = thumbnailUrl;
 			this.time = time;
 			this.title = title;
-			this.description = description;
-		}
-
-
-		public PhotoItem() {
-		}
-
-
-		@DynamoDBHashKey(attributeName = "id")
-		public String getId() {
-			return id;
-		}
-
-
-		public void setId(String id) {
-			this.id = id;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "latitude")
-		public double getLatitude() {
-			return latitude;
-		}
-
-
-		public void setLatitude(double latitude) {
-			this.latitude = latitude;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "longitude")
-		public double getLongitude() {
-			return longitude;
-		}
-
-
-		public void setLongitude(double longitude) {
-			this.longitude = longitude;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "url")
-		public String getUrl() {
-			return url;
-		}
-
-
-		public void setUrl(String url) {
-			this.url = url;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "thumbnailUrl")
-		public String getThumbnailUrl() {
-			return thumbnailUrl;
-		}
-
-
-		public void setThumbnailUrl(String thumbnailUrl) {
-			this.thumbnailUrl = thumbnailUrl;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "time")
-		@DynamoDBTypeConverted(converter = ZonedDateTimeDynamoDBMapper.class)
-		public ZonedDateTime getTime() {
-			return time;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "time")
-		public void setTime(ZonedDateTime time) {
-			this.time = time;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "title")
-		public String getTitle() {
-			return title;
-		}
-
-
-		public void setTitle(String title) {
-			this.title = title;
-		}
-
-
-		@DynamoDBAttribute(attributeName = "description")
-		public String getDescription() {
-			return description;
-		}
-
-
-		public void setDescription(String description) {
 			this.description = description;
 		}
 	}

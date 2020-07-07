@@ -2,10 +2,14 @@ package org.jfl110.mylocation;
 
 import static org.junit.Assert.assertEquals;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.jfl110.aws.DynamoDBTestingRule;
+import org.jfl110.genericitem.DynamoGenericItemModule;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -17,11 +21,13 @@ import com.google.common.collect.ImmutableList;
  * @author jim
  *
  */
-public class TestLogLocationDAO {
+public class TestAutoLogLocations {
 
-	@ClassRule public static final DynamoDBTestingRule dynamoRule = new DynamoDBTestingRule(LogLocationItem.class);
+	@ClassRule public static final DynamoDBTestingRule dynamoRule = new DynamoDBTestingRule(DynamoGenericItemModule.itemClazz());
 
-	private final LogLocationDAO dao = dynamoRule.injector().getInstance(LogLocationDAO.class);
+	private static final String TENANT_ID = "test";
+	private final LocationsDao dao = dynamoRule.injector(new DynamoGenericItemModule()).getInstance(LocationsDao.class);
+	private final ZonedDateTime testTime = ZonedDateTime.of(1999, 4, 2, 1, 1, 1, 1, ZoneId.of("UTC"));
 
 	/**
 	 * Tests (available) CRUD operations
@@ -30,12 +36,12 @@ public class TestLogLocationDAO {
 	public void testCrud() {
 
 		// Given
-		LogLocationItem item1 = new LogLocationItem("a", 1, 2, 3, 4, "dev1", "time1", "time2", "time3");
-		LogLocationItem item2 = new LogLocationItem("b", 5, 6, 7, 8, "dev2", "time4", "time5", "time6");
+		AutoLogLocation item1 = new AutoLogLocation("a", 1, 2, 3, 4, "dev1", testTime, testTime.plusDays(1), Optional.of(testTime.plusMonths(1)));
+		AutoLogLocation item2 = new AutoLogLocation("b", 5, 6, 7, 8, "dev2", testTime.plusMinutes(2), testTime.plusMinutes(5), Optional.empty());
 
 		// When
-		dao.save(ImmutableList.of(item1, item2));
-		List<LogLocationItem> fetchedItems = dao.listAll().sorted((a, b) -> a.getId().compareTo(b.getId())).collect(Collectors.toList());
+		dao.save(TENANT_ID, ImmutableList.of(item1, item2));
+		List<AutoLogLocation> fetchedItems = dao.listAllAuto(TENANT_ID).sorted((a, b) -> a.getId().compareTo(b.getId())).collect(Collectors.toList());
 
 		// Then
 		assertEquals(2, fetchedItems.size());

@@ -89,7 +89,6 @@ task createPom{
 		                }
 		            }
 	       	    }
-	       	    // TODO move this out of common
 	       	    repositories {
 	       	    	repository {
 	       	    		id  'mulesoft-releases'

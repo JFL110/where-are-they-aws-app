@@ -1,11 +1,18 @@
 package org.jfl110.aws;
 
-import org.jfl110.aws.dynamodb.AmazonDynamoDBSupplier;
+import java.util.List;
+
+import org.jfl110.dynamodb.AmazonDynamoDBSupplier;
+import org.jfl110.dynamodb.AppTableNamePrefixSupplier;
+import org.jfl110.dynamodb.GlobalSecondaryIndexSchema;
 import org.junit.rules.ExternalResource;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
+import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -21,18 +28,35 @@ public class DynamoDBTestingRule extends ExternalResource {
 
 	private AmazonDynamoDB amazonDynamoDB;
 	private final ImmutableList<Class<?>> clazzes;
+	private final AppTableNamePrefixSupplier prefix;
 
 	public DynamoDBTestingRule(Class<?>... clazzes) {
+		this("", clazzes);
+	}
+
+
+	public DynamoDBTestingRule(String prefix, Class<?>... clazzes) {
 		System.setProperty("sqlite4java.library.path", "build/libs");
 		this.clazzes = ImmutableList.copyOf(clazzes);
+		this.prefix = () -> prefix;
 	}
 
 
 	@Override
 	protected void before() throws Throwable {
 		amazonDynamoDB = DynamoDBEmbedded.create().amazonDynamoDB();
-		clazzes.forEach(c -> amazonDynamoDB.createTable(new DynamoDBMapper(amazonDynamoDB).generateCreateTableRequest(c)
-				.withProvisionedThroughput(new ProvisionedThroughput(new Long(1), new Long(1)))));
+
+		clazzes.forEach(c -> {
+			GlobalSecondaryIndexSchema gsiAnnotation = c.getAnnotation(GlobalSecondaryIndexSchema.class);
+			List<GlobalSecondaryIndex> gsis = gsiAnnotation == null ? ImmutableList.of()
+					: Guice.createInjector().getInstance(gsiAnnotation.value()).get();
+
+			amazonDynamoDB.createTable(new DynamoDBMapper(amazonDynamoDB, DynamoDBMapperConfig.builder()
+					.withTableNameOverride(TableNameOverride.withTableNamePrefix(prefix.get()))
+					.build()).generateCreateTableRequest(c)
+							.withGlobalSecondaryIndexes(gsis.isEmpty() ? null : gsis)
+							.withProvisionedThroughput(new ProvisionedThroughput(new Long(1), new Long(1))));
+		});
 	}
 
 
@@ -46,7 +70,7 @@ public class DynamoDBTestingRule extends ExternalResource {
 			@Override
 			public void configure(Binder binder) {
 				binder.bind(AmazonDynamoDBSupplier.class).toInstance(() -> getAmazonDynamoDB());
-
+				binder.bind(AppTableNamePrefixSupplier.class).toInstance(prefix);
 			}
 		};
 	}

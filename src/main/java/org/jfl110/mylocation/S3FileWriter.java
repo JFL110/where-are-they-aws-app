@@ -5,28 +5,33 @@ import java.nio.charset.StandardCharsets;
 
 import javax.inject.Inject;
 
-import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
-public class S3FileWriter {
+class S3FileWriter {
 
-	private final S3Configutation sConfigutation;
+	private final S3Configutation s3Configutation;
 
 	@Inject
-	S3FileWriter( S3Configutation sConfigutation) {
-		this.sConfigutation = sConfigutation;
+	S3FileWriter(S3Configutation s3Configutation) {
+		this.s3Configutation = s3Configutation;
 	}
 
 
 	void writeJsonToPointsFile(String json) {
 
-		AmazonS3Client s3client = new AmazonS3Client(sConfigutation.getCredentials());
+		AmazonS3 s3client = AmazonS3ClientBuilder.standard()
+				.withCredentials(s3Configutation.getCredentials())
+				.withRegion(s3Configutation.getRegion())
+				.build();
 
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentType("application/json");
-		PutObjectRequest request = new PutObjectRequest(sConfigutation.getBucketName(), sConfigutation.getPointsFileName(), new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)),
+		PutObjectRequest request = new PutObjectRequest(s3Configutation.getBucketName(), s3Configutation.getPointsFileName(),
+				new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)),
 				metadata);
 		request.setCannedAcl(CannedAccessControlList.PublicRead);
 		s3client.putObject(request);
