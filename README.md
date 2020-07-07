@@ -16,32 +16,3 @@ AWS application to track and display my location and photos.
 
 ## DevOps
 This repo is built automatically on push using GitHub Actions. Changes to the 'version.properties' file trigger a redeployment to AWS Lambda. 
-
-## Running locally
-Follow guidelines to install DynamoDB and SAM locally.
-
-### DynamoDB
-Start DynamoDB locally with
-```
-java -Djava.library.path=./DynamoDBLocal_lib/ -jar DynamoDBLocal.jar -sharedDb
-```
-- Access shell at : http://localhost:8000/shell/ 
-- Template statements for deleting and modifying tables are in the shell interface.
-
-### SAM
-- Install DynamoDB and SAM local
-- Configure DynamoDB endpoint address as the local actual address of your machine (e.g. via 'ip addr show'). As SAM runs within docker, localhost of the 127.0.0.1 cannot be used.
-- Create a fat jar of the Lambda
-```
-gradle shadowJar
-```
-
-- Start SAM local
-```
-sudo sam local start-api -t sam.yml --skip-pull-image
-```
-
-- Single command to run do both:
-```
-clear;  gradle shadowjar; sudo sam local start-api -t sam.yml --skip-pull-image
-```
