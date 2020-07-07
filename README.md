@@ -9,7 +9,7 @@ AWS application to track and display my location.
 - A JS React interface displays the location data on a map. The map is hosted [here](https://jfl110.github.io/where-are-they/), repo [here](https://github.com/JFL110/where-are-they/)
 
 ## DevOps
-This repo is built automatically on push using Github actions. Changes to the version file trigger a redeployment to AWS Lambda. 
+This repo is built automatically on push using GitHub Actions. Changes to the version file trigger a redeployment to AWS Lambda. 
 
 ## Running locally
 Follow guidelines to install DynamoDB and SAM locally.
@@ -20,7 +20,7 @@ Start DynamoDB locally with
 java -Djava.library.path=./DynamoDBLocal_lib/ -jar DynamoDBLocal.jar -sharedDb
 ```
 - Access shell at : http://localhost:8000/shell/ 
-- Template statement for deleting table is in the shell interface.
+- Template statements for deleting and modifying tables are in the shell interface.
 
 ### SAM
 - Install DynamoDB and SAM local
@@ -32,5 +32,10 @@ gradle shadowJar
 
 - Start SAM local
 ```
-sudo sam local start-api -t sam.yml
+sudo sam local start-api -t sam.yml --skip-pull-image
+```
+
+- Single command to run do both:
+```
+clear;  gradle shadowjar; sudo sam local start-api -t sam.yml --skip-pull-image
 ```
