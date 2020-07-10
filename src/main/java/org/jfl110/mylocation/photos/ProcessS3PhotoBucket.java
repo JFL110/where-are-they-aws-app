@@ -58,6 +58,8 @@ class ProcessS3PhotoBucket {
 				.filter(objectSummary -> objectSummary.getKey().startsWith(PHOTO_DIR + tenantId + "/"))
 				// Filter directories
 				.filter(objectSummary -> !objectSummary.getKey().endsWith("/"))
+				// Ignore webp copies
+				.filter(objectSummary -> !objectSummary.getKey().endsWith(".webp"))
 				.map(objectSummary -> {
 					return ExceptionUtils.doRethrowing(() -> {
 						try (InputStream is = s3client.getObject(s3Config.getBucketName(), objectSummary.getKey()).getObjectContent()) {
