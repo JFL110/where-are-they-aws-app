@@ -11,7 +11,7 @@ AWS application to track and display my location and photos.
 - An Android application periodically uploads loactions to the this AWS Lambda in the background that stores them in a DynamoDB table. 
 - A manual task takes photos that have been uploaded to an S3 bucket and extracts the GPS EXIF data.
 - A cron job triggers a digestion of all the location and photo data and produces a JSON file hosted in S3.
-- A JS React interface displays the location data on a map. The map is hosted [here](https://jfl110.github.io/where-are-they/), repo [here](https://github.com/JFL110/where-are-they/)
+- A JS React interface displays the location data on a map. The map is hosted [here](https://www.jamesleach.dev/where-are-they), repo [here](https://github.com/JFL110/jamesleach.dev)
 
 
 ## DevOps
