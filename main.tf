@@ -90,7 +90,7 @@ resource "aws_lambda_function" "lambda-one" {
 
 
 resource "aws_api_gateway_rest_api" "lambda-api" {
-  name        = "Terraform_API_Gateway_Demo"
+  name        = "my-location-api-gateway"
   description = "API Gateway deployed via Terraform"
 }
 
