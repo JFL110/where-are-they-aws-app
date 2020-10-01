@@ -16,25 +16,25 @@ terraform {
 }
 
 variable "DYNAMO_DB_REMOTE_CREDENTIAL_KEY" {
- type = string
+  type = string
 }
 variable "DYNAMO_DB_REMOTE_CREDENTIAL_PASSWORD" {
- type = string
+  type = string
 }
 variable "S3_ACCESS_KEY" {
- type = string
+  type = string
 }
 variable "S3_JSON_BUCKET_NAME" {
- type = string
+  type = string
 }
 variable "S3_JSON_FILE_NAME" {
- type = string
+  type = string
 }
 variable "S3_SECRET_KEY" {
- type = string
+  type = string
 }
 variable "SECURITY_KEY_LIVE" {
- type = string
+  type = string
 }
 
 provider "aws" {
