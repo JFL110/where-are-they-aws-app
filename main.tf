@@ -1,3 +1,42 @@
+
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+
+  backend "remote" {
+    organization = "jim"
+
+    workspaces {
+      name = "where-are-they-aws-app"
+    }
+  }
+}
+
+variable "DYNAMO_DB_REMOTE_CREDENTIAL_KEY" {
+  type = "string"
+}
+variable "DYNAMO_DB_REMOTE_CREDENTIAL_PASSWORD" {
+  type = "string"
+}
+variable "S3_ACCESS_KEY" {
+  type = "string"
+}
+variable "S3_JSON_BUCKET_NAME" {
+  type = "string"
+}
+variable "S3_JSON_FILE_NAME" {
+  type = "string"
+}
+variable "S3_SECRET_KEY" {
+  type = "string"
+}
+variable "SECURITY_KEY_LIVE" {
+  type = "string"
+}
+
 provider "aws" {
   region = "eu-west-2"
 }
@@ -29,7 +68,7 @@ resource "aws_lambda_function" "lambda-one" {
   role          = aws_iam_role.iam-my-location-lambda.arn
   handler       = "org.jfl110.mylocation.MyLocationRootFunctionHandler"
 
-  timeout     = 120
+  timeout     = 250
   memory_size = 640
 
   source_code_hash = filebase64sha256("./build/distributions/where-are-they-aws-app.zip")
@@ -38,7 +77,13 @@ resource "aws_lambda_function" "lambda-one" {
 
   environment {
     variables = {
-      foo = "bar"
+      DYNAMO_DB_REMOTE_CREDENTIAL_KEY      = var.DYNAMO_DB_REMOTE_CREDENTIAL_KEY
+      DYNAMO_DB_REMOTE_CREDENTIAL_PASSWORD = var.DYNAMO_DB_REMOTE_CREDENTIAL_PASSWORD
+      S3_ACCESS_KEY                        = var.S3_ACCESS_KEY
+      S3_JSON_BUCKET_NAME                  = var.S3_JSON_BUCKET_NAME
+      S3_JSON_FILE_NAME                    = var.S3_JSON_FILE_NAME
+      S3_SECRET_KEY                        = var.S3_SECRET_KEY
+      SECURITY_KEY_LIVE                    = var.SECURITY_KEY_LIVE
     }
   }
 }
