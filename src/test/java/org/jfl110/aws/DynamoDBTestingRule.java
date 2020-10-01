@@ -1,5 +1,6 @@
 package org.jfl110.aws;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.jfl110.dynamodb.AmazonDynamoDBSupplier;
@@ -77,6 +78,6 @@ public class DynamoDBTestingRule extends ExternalResource {
 
 
 	public Injector injector(Module... modules) {
-		return Guice.createInjector(FluentIterable.from(modules).append(module()).toList());
+		return Guice.createInjector(FluentIterable.from(Arrays.asList(modules)).append(module()).toList());
 	}
 }

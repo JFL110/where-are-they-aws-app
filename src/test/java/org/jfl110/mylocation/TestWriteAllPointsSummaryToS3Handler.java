@@ -1,6 +1,7 @@
 package org.jfl110.mylocation;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.Optional;
 import org.jfl110.aws.BadInputGatewayResponseException;
 import org.jfl110.aws.GatewayEventInformation;
 import org.jfl110.aws.GatewayResponse;
+import org.jfl110.mylocation.photos.GoogleDrivePhotoLocationDao;
 import org.jfl110.mylocation.photos.Photo;
 import org.jfl110.mylocation.photos.PhotoDao;
 import org.junit.Before;
@@ -34,10 +36,13 @@ public class TestWriteAllPointsSummaryToS3Handler {
 	private final SecurityKeyProvider securityKeyProvider = mock(SecurityKeyProvider.class);
 	private final S3FileWriter s3FileWriter = mock(S3FileWriter.class);
 	private final LocationsDao logLocationDAO = mock(LocationsDao.class);
+	private final GoogleDrivePhotoLocationDao drivePhotoLocationDao = mock(GoogleDrivePhotoLocationDao.class);
+
 	private final PhotoDao photoDao = mock(PhotoDao.class);
 	private final WriteAllPointsSummaryToS3Handler handler = new WriteAllPointsSummaryToS3Handler(
 			s3FileWriter,
 			logLocationDAO,
+			drivePhotoLocationDao,
 			securityKeyProvider,
 			photoDao);
 
@@ -99,7 +104,7 @@ public class TestWriteAllPointsSummaryToS3Handler {
 		GatewayResponse response = handler.handleRequest(new ExposedSecurityKeyInput(GOOD_TENANT_ID, SECURITY_KEY), eventInfo, context);
 
 		ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
-		verify(s3FileWriter, times(1)).writeJsonToPointsFile(stringCaptor.capture());
+		verify(s3FileWriter, times(1)).writeJsonToPointsFile(eq(GOOD_TENANT_ID), stringCaptor.capture());
 
 		assertEquals(
 				"{\"points\":[{\"l\":55.5,\"g\":22.2},{\"l\":123.3,\"g\":99.9}],\"photos\":[{\"url\":\"http://photo\",\"point\":{\"l\":88.8,\"g\":55.2},\"time\":1546319532000}],\"mostRecentPoint\":{\"l\":123.3,\"g\":99.9},\"mostRecentPointTime\":1546409532000}",

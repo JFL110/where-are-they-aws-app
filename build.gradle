@@ -53,6 +53,11 @@ dependencies {
        
     // Image processing
     compile 'com.drewnoakes:metadata-extractor:2.13.0'
+    
+    // Drive
+    testCompile 'com.google.api-client:google-api-client:1.30.10'
+    testCompile 'com.google.oauth-client:google-oauth-client-jetty:1.31.0'
+    testCompile 'com.google.apis:google-api-services-drive:v3-rev197-1.25.0'
 
     // Test utilities
     testCompile group: 'org.hamcrest', name: 'hamcrest-library', version: '1.3'   

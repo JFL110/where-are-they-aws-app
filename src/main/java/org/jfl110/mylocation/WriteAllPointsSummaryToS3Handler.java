@@ -14,6 +14,7 @@ import org.jfl110.aws.GatewayEventInformation;
 import org.jfl110.aws.GatewayRequestHandler;
 import org.jfl110.aws.GatewayResponse;
 import org.jfl110.aws.GatewayResponseBuilder;
+import org.jfl110.mylocation.photos.GoogleDrivePhotoLocationDao;
 import org.jfl110.mylocation.photos.PhotoDao;
 import org.jfl110.util.LambdaUtils;
 import org.jfl110.util.StringUtils;
@@ -34,6 +35,7 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<E
 
 	private final S3FileWriter s3FileWriter;
 	private final LocationsDao logLocationDAO;
+	private final GoogleDrivePhotoLocationDao googleDrivePhotoLocationDao;
 	private final SecurityKeyProvider securityKeyProvider;
 	private final PhotoDao photoDao;
 	private final ObjectMapper objectMapper = new ObjectMapper();
@@ -41,10 +43,12 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<E
 	@Inject
 	WriteAllPointsSummaryToS3Handler(S3FileWriter s3FileWriter,
 			LocationsDao logLocationDAO,
+			GoogleDrivePhotoLocationDao googleDrivePhotoLocationDao,
 			SecurityKeyProvider securityKeyProvider,
 			PhotoDao photoDao) {
 		this.s3FileWriter = s3FileWriter;
 		this.logLocationDAO = logLocationDAO;
+		this.googleDrivePhotoLocationDao = googleDrivePhotoLocationDao;
 		this.securityKeyProvider = securityKeyProvider;
 		this.photoDao = photoDao;
 	}
@@ -66,8 +70,13 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<E
 				.filter(l -> l.getAccuracy() < MIN_ACCURACY_METERS)
 				.map(l -> new PointWithTime(new Point(l.getLatitude(), l.getLongitude()), l.getTime()))
 				.collect(Collectors.toList());
+
 		locations.addAll(
 				LambdaUtils.mapList(logLocationDAO.listAllManual(secretKeyInput.getTenantId()),
+						m -> new PointWithTime(new Point(m.getLatitude(), m.getLongitude()), m.getTime())));
+
+		locations.addAll(
+				LambdaUtils.mapList(googleDrivePhotoLocationDao.listAll(secretKeyInput.getTenantId()),
 						m -> new PointWithTime(new Point(m.getLatitude(), m.getLongitude()), m.getTime())));
 
 		// Photos
@@ -85,7 +94,7 @@ public class WriteAllPointsSummaryToS3Handler implements GatewayRequestHandler<E
 				mostRecentPoint.map(p -> p.time.toInstant().toEpochMilli()).orElse(null));
 
 		// Write to S3
-		s3FileWriter.writeJsonToPointsFile(objectMapper.writeValueAsString(summary));
+		s3FileWriter.writeJsonToPointsFile(secretKeyInput.getTenantId(), objectMapper.writeValueAsString(summary));
 
 		return GatewayResponseBuilder.gatewayResponse().ok().stringBody(summary.points.size() + " points written").build();
 	}

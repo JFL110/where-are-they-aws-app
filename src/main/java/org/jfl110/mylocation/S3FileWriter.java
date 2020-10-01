@@ -21,7 +21,7 @@ class S3FileWriter {
 	}
 
 
-	void writeJsonToPointsFile(String json) {
+	void writeJsonToPointsFile(String tennatId, String json) {
 
 		AmazonS3 s3client = AmazonS3ClientBuilder.standard()
 				.withCredentials(s3Configutation.getCredentials())
@@ -30,7 +30,9 @@ class S3FileWriter {
 
 		ObjectMetadata metadata = new ObjectMetadata();
 		metadata.setContentType("application/json");
-		PutObjectRequest request = new PutObjectRequest(s3Configutation.getBucketName(), s3Configutation.getPointsFileName(),
+		PutObjectRequest request = new PutObjectRequest(
+				s3Configutation.getBucketName(),
+				tennatId + "." + s3Configutation.getPointsFileName(),
 				new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)),
 				metadata);
 		request.setCannedAcl(CannedAccessControlList.PublicRead);

@@ -55,6 +55,7 @@ public class MigrateToGenericItem {
 		front.listAll(ManualLocationItem.class)
 				.filter(m -> !m.id.equals("template"))
 				.transform(this::map)
+				.toList()
 				.stream()
 				.peek(i -> System.out.println(i.getId()))
 				.forEach(m -> dao.saveManualItem("live", m));
@@ -62,6 +63,7 @@ public class MigrateToGenericItem {
 		// Auto Locations
 		front.listAll(LogLocationItem.class)
 				.transform(this::map)
+				.toList()
 				.stream()
 				.peek(i -> System.out.println(i.getId()))
 				.forEach(m -> dao.save("live", ImmutableList.of(m)));
