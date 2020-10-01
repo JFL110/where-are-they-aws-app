@@ -68,7 +68,7 @@ resource "aws_lambda_function" "lambda-one" {
   role          = aws_iam_role.iam-my-location-lambda.arn
   handler       = "org.jfl110.mylocation.MyLocationRootFunctionHandler"
 
-  timeout     = 250
+  timeout     = 899
   memory_size = 640
 
   source_code_hash = filebase64sha256("./build/distributions/where-are-they-aws-app.zip")
