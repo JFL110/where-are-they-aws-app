@@ -15,7 +15,7 @@ AWS application to track and display my location and photos.
 
 
 ## DevOps
-This repo is built automatically on push using GitHub Actions. Changes to the 'version.properties' file trigger a redeployment to AWS Lambda. 
+This repo is built automatically on push using GitHub Actions. Changes to the 'version.properties' file trigger a redeployment to AWS Lambda via Terraform.
 
 ## Running locally
 See [these notes](https://github.com/JFL110/where-are-they-aws-app/blob/master/running-locally.md).
