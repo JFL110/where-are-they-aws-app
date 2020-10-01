@@ -84,6 +84,7 @@ resource "aws_lambda_function" "lambda-one" {
       S3_JSON_FILE_NAME                    = var.S3_JSON_FILE_NAME
       S3_SECRET_KEY                        = var.S3_SECRET_KEY
       SECURITY_KEY_LIVE                    = var.SECURITY_KEY_LIVE
+      SECURITY_KEY_TEST                    = var.SECURITY_KEY_LIVE
     }
   }
 }
